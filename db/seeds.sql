@@ -1,0 +1,47 @@
+INSERT INTO department (name)
+VALUES ("Sales"),
+       ("Marketing"),
+       ("Production"),
+       ("Research and Development"),
+       ("Accounting"),
+       ("Human Resources");
+
+INSERT INTO role (title, salary, department_id)
+VALUES ("Sales Director", 100000, 1),
+       ("Sales Manager", 80000, 1),
+       ("Sales", 50000, 1),
+       ("Marketing Director", 100000, 2),
+       ("Marketing Manager", 80000, 2),
+       ("Marketing associate", 50000, 2),
+       ("Production Director", 100000, 3),
+       ("Production Manager", 80000, 3),
+       ("Production Engineer", 50000, 3),
+       ("R&D Director", 100000, 4),
+       ("R&D Manager", 80000, 4),
+       ("R&D Engineer", 50000, 4),
+       ("Accounting Director", 100000, 5),
+       ("Accounting Manager", 80000, 5),
+       ("Accounting associate", 50000, 5),
+       ("HR Director", 100000, 6),
+       ("HR Manager", 80000, 6),
+       ("HR associate", 50000, 6);
+
+INSERT INTO employee (first_name, last_name, role_id, manager_id)
+VALUES ("Julio", "Baldwin", 1, NULL),
+        ("Kimberly", "Powell", 2, 1),
+       ("Taryn", "Howe", 3, 2),
+       ("Cortez", "Hopkins", 4, NULL),
+       ("Fisher", "Hall", 5, 4),
+       ("Jamie", "Eaton", 6, 5),
+       ("Francisco", "Garza", 7, NULL),
+       ("Everette", "Bruce", 8, 7),
+       ("Helen", "Marshall", 9, 8),
+       ("Chaya", "Norman", 10, NULL),
+       ("Dylan", "Boyer", 11, 10),
+       ("Ali", "Benson", 12, 11),
+       ("Darrell", "Dean", 13, NULL),
+       ("Stephanie", "Walker", 14, 13),
+       ("Halle", "Howard", 15, 14),
+       ("Marcelo", "Hines", 16, NULL),
+       ("Johnny", "Horn", 17, 16),
+       ("Alberto", "Suarez", 18, 17);
