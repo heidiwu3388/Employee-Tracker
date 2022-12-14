@@ -55,7 +55,10 @@ function chooseAnOption() {
     .then((answers) => {
         switch (answers.option) {
             case "View All Departments" :
-                viewAllDepartment();
+                viewAllDepartments();
+                break;
+            case "View All Roles" :
+                viewAllRoles();
                 break;
             case "Quit" :
                 process.exit(); //end the application
@@ -67,8 +70,24 @@ function chooseAnOption() {
 }
 
 
-function viewAllDepartment() {
-    db.query('SELECT id, name AS department FROM department', function (error, results) {
+function viewAllDepartments() {
+    const sql = "SELECT id, name AS department FROM department"
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        console.log(" ");
+        console.table(results);
+        chooseAnOption();
+    });
+
+}
+
+function viewAllRoles() {
+    const sql = `SELECT role.id, role.title AS role, department.name AS department, role.salary
+                FROM role
+                JOIN department
+                ON role.department_id = department.id`;
+
+    db.query(sql, function (error, results) {
         if (error) throw error;
         console.log(" ");
         console.table(results);
