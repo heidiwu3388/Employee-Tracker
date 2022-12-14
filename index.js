@@ -58,6 +58,9 @@ function chooseAnOption() {
     ])
     .then((answers) => {
         switch (answers.option) {
+            case "View All Departments" :
+                viewAllDepartment();
+                break;
             case "Quit" :
                 process.exit(); //end the application
             default:
@@ -68,3 +71,12 @@ function chooseAnOption() {
 }
 
 
+function viewAllDepartment() {
+    db.query('SELECT id, name AS department FROM department', function (error, results) {
+        if (error) throw error;
+        console.log(" ");
+        console.table(results);
+        chooseAnOption();
+    });
+
+}
