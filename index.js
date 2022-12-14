@@ -4,12 +4,26 @@ const inquirer = require("inquirer");
 const cTable = require("console.table");
 const chalk = require("chalk");
 
+// create database connection configuration
+const db = mysql.createConnection(
+      {
+        host: "localhost",
+        user: "root",
+        password: "rootroot",
+        database: "employee_db",
+      },
+    )
 
-console.log("******************************");
-console.log("*         WELCOME TO         *");
-console.log("*      EMPLOYEE TRACKER      *");
-console.log("******************************");
-chooseAnOption();
+// connect to the database
+db.connect(error => {
+    if (error) throw error;
+    console.log("--- employee_db connected ----");
+    console.log("******************************");
+    console.log("*         WELCOME TO         *");
+    console.log("*      EMPLOYEE TRACKER      *");
+    console.log("******************************");
+    chooseAnOption();
+});    
 
 function chooseAnOption() {
     // ask user to choose an option
@@ -44,11 +58,13 @@ function chooseAnOption() {
     ])
     .then((answers) => {
         switch (answers.option) {
-            case "" :
-                break;
             case "Quit" :
-                return; //end the application
+                process.exit(); //end the application
+            default:
+                chooseAnOption();
             }
-        return chooseAnOption();
     })
+    .catch(error => console.error(error));
 }
+
+
