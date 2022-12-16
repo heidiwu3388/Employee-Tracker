@@ -14,16 +14,11 @@ const db = mysql.createConnection(
       },
     )
 
-// connect to the database
-db.connect(error => {
-    if (error) throw error;
-    console.log("--- employee_db connected ----");
-    console.log("******************************");
-    console.log("*         WELCOME TO         *");
-    console.log("*      EMPLOYEE TRACKER      *");
-    console.log("******************************");
-    chooseAnOption();
-});    
+console.log("******************************");
+console.log("*         WELCOME TO         *");
+console.log("*      EMPLOYEE TRACKER      *");
+console.log("******************************");
+chooseAnOption();
 
 function chooseAnOption() {
     // ask user to choose an option
@@ -65,6 +60,9 @@ function chooseAnOption() {
                 break;
             case "Add Department" :
                 addDepartment();
+                break;
+            case "Add Role" :
+                addRole();
                 break;
             case "Quit" :
                 process.exit(0); //end the application
@@ -139,4 +137,43 @@ function addDepartment() {
         });
     })
     .catch(error => console.error(error));
+}
+
+function addRole() {
+    const sql = "SELECT name FROM department";
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        const departmentList = results.map((department) => department.name);
+        inquirer.prompt([
+            {
+                type: "input",
+                message: "What is the title of the role?",
+                name: "roleTitle"
+            },
+            {
+                type: "input",
+                message: "What is the salary of the role?",
+                name: "roleSalary"
+            },
+            {
+                type: "list",
+                message: "Which department does the role belong to?",
+                name: "roleDepartment",
+                choices: departmentList
+            }
+        ])
+        .then((answers) => {
+            const sql = `
+            INSERT INTO 
+                role (title, salary, department_id) 
+            VALUES 
+                ("${answers.roleTitle}", ${answers.roleSalary}, (SELECT id FROM department WHERE name = "${answers.roleDepartment}"))`;
+            db.query(sql, function (error, results) {
+                if (error) throw error;
+                console.log(chalk.green(`${answers.roleTitle} Role added successfully!\n`));
+                chooseAnOption();
+            });
+        })
+        .catch(error => console.error(error));
+    });
 }
