@@ -182,15 +182,15 @@ function addRole() {
 
 function addEmployee() {
     // query to get the list of roles
-    let sql = "SELECT title FROM role";
+    let sql = "SELECT * FROM role";
     db.query(sql, function (error, results) {
         if (error) throw error;
-        const roleList = results.map((role) => role.title);
+        const roleList = results.map((role) => {return {name: role.title, value: role.id}});
         // query to get the list of managers
-        sql = "SELECT first_name, last_name FROM employee";
+        sql = "SELECT * FROM employee";
         db.query(sql, function (error, results) {
             if (error) throw error;
-            const managerList = results.map((manager) => `${manager.first_name} ${manager.last_name}`);
+            const managerList = results.map((manager) => {return {name: manager.first_name + " " + manager.last_name, value: manager.id}});
             // prompt the user to enter the employee information
             inquirer.prompt([
                 {
@@ -217,34 +217,19 @@ function addEmployee() {
                 }
             ])
             .then((answers) => {
-                let roleId;
-                let managerId;
-                // query to get the role id
-                sql = `SELECT id FROM role WHERE title = "${answers.employeeRole}"`;
+                sql = `
+                    INSERT INTO 
+                        employee (first_name, last_name, role_id, manager_id) 
+                    VALUES (
+                        "${answers.employeeFirstName}", 
+                        "${answers.employeeLastName}", 
+                        "${answers.employeeRole}",
+                        "${answers.employeeManager}"
+                    )`;
                 db.query(sql, function (error, results) {
                     if (error) throw error;
-                    roleId = results[0].id;
-                    // query to get the manager id
-                    sql = `SELECT id FROM employee WHERE CONCAT(first_name, " ", last_name) = "${answers.employeeManager}"`;
-                    db.query(sql, function (error, results) {
-                        if (error) throw error;
-                        managerId = results[0].id;
-                        // query to insert the employee
-                        sql = `
-                            INSERT INTO 
-                                employee (first_name, last_name, role_id, manager_id) 
-                            VALUES (
-                                "${answers.employeeFirstName}", 
-                                "${answers.employeeLastName}", 
-                                ${roleId},
-                                ${managerId}
-                            )`;
-                        db.query(sql, function (error, results) {
-                            if (error) throw error;
-                            console.log(chalk.green(`${answers.employeeFirstName} ${answers.employeeLastName} added successfully!\n`));
-                            chooseAnOption();
-                        });
-                    });
+                    console.log(chalk.green(`${answers.employeeFirstName} ${answers.employeeLastName} added successfully!\n`));
+                    chooseAnOption();
                 });
             })
             .catch(error => console.error(error));
