@@ -64,6 +64,9 @@ function chooseAnOption() {
             case "Add Role" :
                 addRole();
                 break;
+            case "Add Employee" :
+                addEmployee();
+                break;
             case "Quit" :
                 process.exit(0); //end the application
             default:
@@ -131,8 +134,7 @@ function addDepartment() {
         const sql = `INSERT INTO department (name) VALUES ("${answers.departmentName}")`;
         db.query(sql, function (error, results) {
             if (error) throw error;
-            console.log(" ");
-            console.log(chalk.green(`${answers.departmentName} Department added successfully!`));
+            console.log(chalk.green(`${answers.departmentName} Department added successfully!\n`));
             chooseAnOption();
         });
     })
@@ -175,5 +177,77 @@ function addRole() {
             });
         })
         .catch(error => console.error(error));
+    });
+}
+
+function addEmployee() {
+    // query to get the list of roles
+    let sql = "SELECT title FROM role";
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        const roleList = results.map((role) => role.title);
+        // query to get the list of managers
+        sql = "SELECT first_name, last_name FROM employee";
+        db.query(sql, function (error, results) {
+            if (error) throw error;
+            const managerList = results.map((manager) => `${manager.first_name} ${manager.last_name}`);
+            // prompt the user to enter the employee information
+            inquirer.prompt([
+                {
+                    type: "input",
+                    message: "What is the first name of the employee?",
+                    name: "employeeFirstName"
+                },
+                {
+                    type: "input",
+                    message: "What is the last name of the employee?",
+                    name: "employeeLastName"
+                },
+                {
+                    type: "list",
+                    message: "What is the role of the employee?",
+                    name: "employeeRole",
+                    choices: roleList
+                },
+                {
+                    type: "list",
+                    message: "Who is the manager of the employee?",
+                    name: "employeeManager",
+                    choices: managerList
+                }
+            ])
+            .then((answers) => {
+                let roleId;
+                let managerId;
+                // query to get the role id
+                sql = `SELECT id FROM role WHERE title = "${answers.employeeRole}"`;
+                db.query(sql, function (error, results) {
+                    if (error) throw error;
+                    roleId = results[0].id;
+                    // query to get the manager id
+                    sql = `SELECT id FROM employee WHERE CONCAT(first_name, " ", last_name) = "${answers.employeeManager}"`;
+                    db.query(sql, function (error, results) {
+                        if (error) throw error;
+                        managerId = results[0].id;
+                        // query to insert the employee
+                        sql = `
+                            INSERT INTO 
+                                employee (first_name, last_name, role_id, manager_id) 
+                            VALUES (
+                                "${answers.employeeFirstName}", 
+                                "${answers.employeeLastName}", 
+                                ${roleId},
+                                ${managerId}
+                            )`;
+                        db.query(sql, function (error, results) {
+                            if (error) throw error;
+                            console.log(chalk.green(`${answers.employeeFirstName} ${answers.employeeLastName} added successfully!\n`));
+                            chooseAnOption();
+                        });
+                    });
+                });
+            })
+            .catch(error => console.error(error));
+        });
     });
 }
