@@ -55,11 +55,17 @@ function chooseAnOption() {
             case "Add Department" :
                 addDepartment();
                 break;
+            case "Delete Department" :
+                deleteDepartment();
+                break;
             case "View All Roles" :
                 viewAllRoles();
                 break;
             case "Add Role" :
                 addRole();
+                break;
+            case "Delete Role" :
+                deleteRole();
                 break;
             case "View All Employees" :
                 viewAllEmployees();
@@ -72,6 +78,9 @@ function chooseAnOption() {
                 break;
             case "Update Employee Manager" :
                 updateEmployeeManager();
+                break;
+            case "Delete Empolyee" :
+                deleteEmployee();
                 break;
             case "Quit" :
                 process.exit(0); //end the application
@@ -113,10 +122,39 @@ function addDepartment() {
     .catch(error => console.error(error));
 }
 
+function deleteDepartment() {
+    // query to get the list of departments
+    const sql = "SELECT * FROM department";
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        const departmentList = results.map((department) => {return {name: department.name, value: department.id}});
+        // ask user to choose a department to delete
+        inquirer.prompt([
+            {
+                type: "list",
+                message: "Which department would you like to delete?",
+                name: "departmentId",
+                choices: departmentList
+            }
+        ])
+        .then((answers) => {
+            // delete the department from the database
+            const sql = `DELETE FROM department WHERE id = ${answers.departmentId}`;
+            db.query(sql, function (error, results) {
+                if (error) throw error;
+                console.log(chalk.green(`Department deleted successfully!\n`));
+                chooseAnOption();
+            });
+        })
+        .catch(error => console.error(error));
+    });
+}
+
 function viewAllRoles() {
+    // query to get the list of roles
     const sql = `SELECT role.id, role.title AS role, department.name AS department, role.salary
                 FROM role
-                JOIN department
+                LEFT JOIN department
                 ON role.department_id = department.id`;
 
     db.query(sql, function (error, results) {
@@ -171,7 +209,35 @@ function addRole() {
     });
 }
 
+function deleteRole() {
+    // query to get the list of roles
+    let sql = "SELECT * FROM role";
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        const roleList = results.map((role) => {return {name: role.title, value: role.id}});
+        // ask user to choose a role to delete
+        inquirer.prompt([
+            { 
+                type: "list",
+                message: "Which role would you like to delete?",
+                name: "roleId",
+                choices: roleList
+            }
+        ])
+        .then((answers) => {
+            // delete the role from the database
+            sql = `DELETE FROM role WHERE id = ${answers.roleId}`;
+            db.query(sql, function (error, results) {
+                if (error) throw error;
+                console.log(chalk.green(`Role deleted successfully!\n`));
+                chooseAnOption();
+            });
+        })
+        .catch(error => console.error(error));
+    });
+}
 function viewAllEmployees() {
+    // query to get the list of employees
     const sql = `SELECT employee.id, employee.first_name, employee.last_name, role.title, 
     department.name AS department, role.salary, CONCAT(manager.first_name, " ", manager.last_name) AS manager
     FROM 
@@ -230,6 +296,7 @@ function addEmployee() {
                 }
             ])
             .then((answers) => {
+                // insert the employee information into the database
                 sql = `
                     INSERT INTO 
                         employee (first_name, last_name, role_id, manager_id) 
@@ -277,6 +344,7 @@ function updateEmployeeRole() {
                 }
             ])
             .then((answers) => {
+                // update the employee information into the database
                 sql = `
                     UPDATE 
                         employee 
@@ -341,3 +409,34 @@ function updateEmployeeManager() {
         .catch(error => console.error(error));
     });
 };
+
+function deleteEmployee() {
+    // query to get the list of employees
+    let sql = "SELECT * FROM employee";
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        const employeeList = results.map((employee) => {return {name: employee.first_name + " " + employee.last_name, value: employee.id}});
+        // prompt the user to enter the employee information
+        inquirer.prompt([
+            {
+                type: "list",
+                message: "Which employee do you want to delete?",
+                name: "employeeId",
+                choices: employeeList
+            }
+        ])
+        .then((answers) => {
+            sql = `
+                DELETE FROM 
+                    employee 
+                WHERE 
+                    id = ${answers.employeeId}`;
+            db.query(sql, function (error, results) {
+                if (error) throw error;
+                console.log(chalk.green(`Employee deleted successfully!\n`));
+                chooseAnOption();
+            }
+        )})
+        .catch(error => console.error(error));
+    });
+}
