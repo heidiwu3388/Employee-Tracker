@@ -82,7 +82,12 @@ function chooseAnOption() {
             case "Delete Empolyee" :
                 deleteEmployee();
                 break;
+            case "View the Total Utilized Budget of a Department" :
+                console.log("case: View the Total Utilized Budget of a Department");
+                viewTotalUtilizedBudget();
+                break;              
             case "Quit" :
+                console.log("Quit");
                 process.exit(0); //end the application
             default:
                 chooseAnOption();
@@ -437,6 +442,70 @@ function deleteEmployee() {
                 chooseAnOption();
             }
         )})
+        .catch(error => console.error(error));
+    });
+}
+
+function viewTotalUtilizedBudget() {
+    // query to get the list of departments
+    let sql = "SELECT * FROM department";
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        // create an array of department objects
+        const departmentList = results.map((department) => {return {name: department.name, value: department.id}});
+        // add the option to view the total utilized budget of all departments
+        departmentList.unshift({name: "All Departments", value: 0});
+        // prompt the user to enter the department information
+        inquirer.prompt([
+            {
+                type: "list",
+                message: "Which department's total utilized budget do you want to view?",
+                name: "departmentId",
+                choices: departmentList
+            }
+        ])
+        .then((answers) => {
+            let sql;
+            if (answers.departmentId === 0) { // all departments
+                // query to get the total utilized budget of all departments
+                sql = `
+                    SELECT 
+                        department.name AS department,
+                        SUM(role.salary) AS total_budget
+                    FROM
+                        department
+                    LEFT JOIN
+                        role ON role.department_id = department.id
+                    LEFT JOIN
+                        employee ON employee.role_id = role.id
+                    GROUP BY
+                        department.name
+                    ORDER BY
+                        department.name`;
+            } else { // specific department
+                // query to get the total utilized budget of a specific department
+                sql = `
+                    SELECT 
+                        department.name AS department,
+                        SUM(role.salary) AS total_budget
+                    FROM
+                        department
+                    LEFT JOIN
+                        role ON role.department_id = department.id
+                    LEFT JOIN
+                        employee ON employee.role_id = role.id
+                    WHERE
+                        department.id = ${answers.departmentId}
+                    ORDER BY
+                        department.name`;
+            }
+            db.query(sql, function (error, results) {
+                if (error) throw error;
+                console.log("");
+                console.table(results);
+                chooseAnOption();
+            });
+        })
         .catch(error => console.error(error));
     });
 }
