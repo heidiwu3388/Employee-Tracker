@@ -29,19 +29,19 @@ function chooseAnOption() {
             name: "option",
             choices: [
                 "View All Departments",
-                "View All Roles", 
-                "View All Employees",
-                "View Employee by Manager",
-                "View Employee by Department",
-                "View the Total Utilized Budget of a Department",
                 "Add Department",
+                "Delete Department",
+                "View All Roles", 
                 "Add Role",
+                "Delete Role",
+                "View All Employees",
                 "Add Employee",
                 "Update Employee Role",
                 "Update Employee Manager",
-                "Delete Department",
-                "Delete Role",
                 "Delete Empolyee",
+                "View Employee by Manager",
+                "View Employee by Department",
+                "View the Total Utilized Budget of a Department",
                 "Quit",
                 new inquirer.Separator("---------- END OF THE LIST ----------"),
             ]
@@ -52,20 +52,26 @@ function chooseAnOption() {
             case "View All Departments" :
                 viewAllDepartments();
                 break;
-            case "View All Roles" :
-                viewAllRoles();
-                break;
-            case "View All Employees" :
-                viewAllEmployees();
-                break;
             case "Add Department" :
                 addDepartment();
+                break;
+            case "View All Roles" :
+                viewAllRoles();
                 break;
             case "Add Role" :
                 addRole();
                 break;
+            case "View All Employees" :
+                viewAllEmployees();
+                break;
             case "Add Employee" :
                 addEmployee();
+                break;
+            case "Update Employee Role" :
+                updateEmployeeRole();
+                break;
+            case "Update Employee Manager" :
+                updateEmployeeManager();
                 break;
             case "Quit" :
                 process.exit(0); //end the application
@@ -88,40 +94,6 @@ function viewAllDepartments() {
 
 }
 
-function viewAllRoles() {
-    const sql = `SELECT role.id, role.title AS role, department.name AS department, role.salary
-                FROM role
-                JOIN department
-                ON role.department_id = department.id`;
-
-    db.query(sql, function (error, results) {
-        if (error) throw error;
-        console.log(" ");
-        console.table(results);
-        chooseAnOption();
-    });
-}
-
-function viewAllEmployees() {
-    const sql = `SELECT employee.id, employee.first_name, employee.last_name, role.title, 
-    department.name AS department, role.salary, CONCAT(manager.first_name, " ", manager.last_name) AS manager
-    FROM 
-        employee
-    LEFT JOIN 
-        role ON employee.role_id = role.id
-    LEFT JOIN 
-        department ON role.department_id = department.id
-    LEFT JOIN 
-        employee AS manager ON employee.manager_id = manager.id`;
-    
-    db.query(sql, function (error, results) {
-        if (error) throw error;
-        console.log(" ");
-        console.table(results);
-        chooseAnOption();
-    });
-}
-
 function addDepartment() {
     inquirer.prompt([
         {
@@ -139,6 +111,20 @@ function addDepartment() {
         });
     })
     .catch(error => console.error(error));
+}
+
+function viewAllRoles() {
+    const sql = `SELECT role.id, role.title AS role, department.name AS department, role.salary
+                FROM role
+                JOIN department
+                ON role.department_id = department.id`;
+
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        console.log(" ");
+        console.table(results);
+        chooseAnOption();
+    });
 }
 
 function addRole() {
@@ -184,6 +170,28 @@ function addRole() {
         .catch(error => console.error(error));
     });
 }
+
+function viewAllEmployees() {
+    const sql = `SELECT employee.id, employee.first_name, employee.last_name, role.title, 
+    department.name AS department, role.salary, CONCAT(manager.first_name, " ", manager.last_name) AS manager
+    FROM 
+        employee
+    LEFT JOIN 
+        role ON employee.role_id = role.id
+    LEFT JOIN 
+        department ON role.department_id = department.id
+    LEFT JOIN 
+        employee AS manager ON employee.manager_id = manager.id`;
+    
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        console.log(" ");
+        console.table(results);
+        chooseAnOption();
+    });
+}
+
+
 
 function addEmployee() {
     // query to get the list of roles
@@ -241,3 +249,95 @@ function addEmployee() {
         });
     });
 }
+
+function updateEmployeeRole() {
+    // query to get the list of employees
+    let sql = "SELECT * FROM employee";
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        const employeeList = results.map((employee) => {return {name: employee.first_name + " " + employee.last_name, value: employee.id}});
+        // query to get the list of roles
+        sql = "SELECT * FROM role";
+        db.query(sql, function (error, results) {
+            if (error) throw error;
+            const roleList = results.map((role) => {return {name: role.title, value: role.id}});
+            // prompt the user to enter the employee information
+            inquirer.prompt([
+                {
+                    type: "list",
+                    message: "Which employee's role do you want to update?",
+                    name: "employee",
+                    choices: employeeList
+                },
+                {
+                    type: "list",
+                    message: "What is the new role of the employee?",
+                    name: "employeeRole",
+                    choices: roleList
+                }
+            ])
+            .then((answers) => {
+                sql = `
+                    UPDATE 
+                        employee 
+                    SET 
+                        role_id = ${answers.employeeRole}
+                    WHERE 
+                        id = ${answers.employee}`;
+                db.query(sql, function (error, results) {
+                    if (error) throw error;
+                    console.log(chalk.green(`Employee role updated successfully!\n`));
+                    chooseAnOption();
+                });
+            })
+            .catch(error => console.error(error));
+        });
+    });
+}
+
+function updateEmployeeManager() {
+    // query to get the list of employees
+    let sql = "SELECT * FROM employee";
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        const employeeList = results.map((employee) => {return {name: employee.first_name + " " + employee.last_name, value: employee.id}});
+        // prompt the user to enter the employee information
+        inquirer.prompt([
+            {
+                type: "list",
+                message: "Which employee's manager do you want to update?",
+                name: "employee",
+                choices: employeeList
+            },
+        ])
+        .then((answers) => {
+            const employeeId = answers.employee;
+            // filter the list of employees to remove the employee whose manager is being updated
+            const managerList = employeeList.filter((manager) => manager.value !== employeeId);
+            // prompt the user to enter the employee information
+            inquirer.prompt([
+                {
+                    type: "list",
+                    message: "Who is the new manager of the employee?",
+                    name: "employeeManager",
+                    choices: managerList
+                }
+            ])
+            .then((answers) => {
+                sql = `
+                    UPDATE 
+                        employee 
+                    SET 
+                        manager_id = ${answers.employeeManager}
+                    WHERE 
+                        id = ${employeeId}`;
+                db.query(sql, function (error, results) {
+                    if (error) throw error;
+                    console.log(chalk.green(`Employee manager updated successfully!\n`));
+                    chooseAnOption();
+                });
+            });
+        })
+        .catch(error => console.error(error));
+    });
+};
