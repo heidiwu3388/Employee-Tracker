@@ -142,10 +142,13 @@ function addDepartment() {
 }
 
 function addRole() {
-    const sql = "SELECT name FROM department";
+    // query to get the list of departments
+    const sql = "SELECT * FROM department";
     db.query(sql, function (error, results) {
         if (error) throw error;
-        const departmentList = results.map((department) => department.name);
+        const departmentList = results.map((department) => {return {name: department.name, value: department.id}});
+        console.log("departmentList: ", departmentList);
+        // ask user to enter the role information
         inquirer.prompt([
             {
                 type: "input",
@@ -165,11 +168,13 @@ function addRole() {
             }
         ])
         .then((answers) => {
+            console.log("answers: ", answers);
+            // insert the role information into the database
             const sql = `
             INSERT INTO 
                 role (title, salary, department_id) 
             VALUES 
-                ("${answers.roleTitle}", ${answers.roleSalary}, (SELECT id FROM department WHERE name = "${answers.roleDepartment}"))`;
+                ("${answers.roleTitle}", ${answers.roleSalary}, ${answers.roleDepartment})`;
             db.query(sql, function (error, results) {
                 if (error) throw error;
                 console.log(chalk.green(`${answers.roleTitle} Role added successfully!\n`));
