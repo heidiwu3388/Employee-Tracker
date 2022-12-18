@@ -484,6 +484,7 @@ function viewEmployeeByManager() {
     db.query(sql, function (error, results) {
         if (error) throw error;
         const managerList = results.map((manager) => {return {name: manager.first_name + " " + manager.last_name, value: manager.id}});
+        // add an option to view employees of all managers
         managerList.unshift({name: "All Managers", value: 0});
         // prompt the user to enter the employee information
         inquirer.prompt([
@@ -495,8 +496,8 @@ function viewEmployeeByManager() {
             }
         ])
         .then((answers) => {
+            console.log(chalk.green())
             if (answers.managerId === 0) { // if the user wants to view employees of all managers
-                console.log(chalk.green(`Employees of all managers:\n`));
                 sql = `
                     SELECT
                         CONCAT(manager.first_name, ' ', manager.last_name) AS manager,
@@ -517,18 +518,6 @@ function viewEmployeeByManager() {
                     ORDER BY 
                         manager`;
             } else { // if the user wants to view employees of a specific manager
-                // query to get the manager's full name
-                sql = `
-                    SELECT 
-                        CONCAT(first_name, ' ', last_name) AS manager 
-                    FROM 
-                        employee 
-                    WHERE 
-                        id = ${answers.managerId}`;
-                db.query(sql, function (error, results) {
-                    if (error) throw error;
-                    console.log(chalk.green(`\nEmployees of ${results[0].manager}:`));
-                });                        
                 sql = `
                     SELECT
                         employee.id, 
@@ -546,7 +535,7 @@ function viewEmployeeByManager() {
                     LEFT JOIN 
                         employee AS manager ON employee.manager_id = manager.id
                     WHERE 
-                        employee.manager_id = ${answers.managerId}`;
+                        manager.id = ${answers.managerId}`;
             }
             db.query(sql, function (error, results) {
                 if (error) throw error;
@@ -577,7 +566,6 @@ function viewEmployeeByDepartment() {
         ])
         .then((answers) => {
             if (answers.departmentId === 0) { // if the user wants to view employees of all departments
-                console.log(chalk.green(`Employees of all departments:\n`));
                 sql = `
                     SELECT
                         department.name AS department, 
@@ -600,12 +588,22 @@ function viewEmployeeByDepartment() {
             } else { // if the user wants to view employees of a specific department
                 sql = `
                     SELECT
-                        department.name AS department
-                    FROM
-                        department
+                        employee.id, 
+                        employee.first_name, 
+                        employee.last_name, 
+                        role.title, 
+                        role.salary,
+                        CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+                    FROM 
+                        employee 
+                    LEFT JOIN 
+                        role ON employee.role_id = role.id
+                    LEFT JOIN
+                        employee AS manager ON employee.manager_id = manager.id
+                    JOIN 
+                        department ON role.department_id = department.id
                     WHERE
-                        id = ${answers.departmentId}`;
-                console.log(chalk.green(`\nEmployees of ${results[0].name}:`));
+                        department.id = ${answers.departmentId}`;
             }
             db.query(sql, function (error, results) {
                 if (error) throw error;
