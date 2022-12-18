@@ -102,14 +102,7 @@ function chooseAnOption() {
 
 
 function viewAllDepartments() {
-    const sql = `
-        SELECT 
-            id, 
-            name AS department 
-        FROM 
-            department
-        ORDER BY
-            id`
+    const sql = "SELECT id, name AS department FROM department ORDER BY id";
     db.query(sql, function (error, results) {
         if (error) throw error;
         console.log(" ");
@@ -567,10 +560,12 @@ function viewEmployeeByManager() {
 }
 
 function viewEmployeeByDepartment() {
-    let sql = "SELECT * FROM department";
+    // query to get the list of departments
+    let sql = "SELECT * FROM department ORDER BY name";
     db.query(sql, function (error, results) {
         if (error) throw error;
         const departmentList = results.map((department) => {return {name: department.name, value: department.id}});
+        // add option to view employees of all departments
         departmentList.unshift({name: "All Departments", value: 0});
         inquirer.prompt([
             {
@@ -581,7 +576,7 @@ function viewEmployeeByDepartment() {
             }
         ])
         .then((answers) => {
-            if (answers.departmentId === 0) {
+            if (answers.departmentId === 0) { // if the user wants to view employees of all departments
                 console.log(chalk.green(`Employees of all departments:\n`));
                 sql = `
                     SELECT
@@ -602,7 +597,7 @@ function viewEmployeeByDepartment() {
                         department ON role.department_id = department.id
                     ORDER BY 
                         department`;
-            } else {
+            } else { // if the user wants to view employees of a specific department
                 sql = `
                     SELECT
                         department.name AS department
