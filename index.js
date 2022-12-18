@@ -104,7 +104,14 @@ function chooseAnOption() {
 
 
 function viewAllDepartments() {
-    const sql = "SELECT id, name AS department FROM department"
+    const sql = `
+        SELECT 
+            id, 
+            name AS department 
+        FROM 
+            department
+        ORDER BY
+            id`
     db.query(sql, function (error, results) {
         if (error) throw error;
         console.log(" ");
@@ -135,7 +142,13 @@ function addDepartment() {
 
 function deleteDepartment() {
     // query to get the list of departments
-    const sql = "SELECT * FROM department";
+    const sql = `
+        SELECT 
+            * 
+        FROM 
+            department
+        ORDER BY
+            name`;
     db.query(sql, function (error, results) {
         if (error) throw error;
         const departmentList = results.map((department) => {return {name: department.name, value: department.id}});
@@ -548,8 +561,62 @@ function viewEmployeeByManager() {
 }
 
 function viewEmployeeByDepartment() {
-
+    let sql = "SELECT * FROM department";
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        const departmentList = results.map((department) => {return {name: department.name, value: department.id}});
+        departmentList.unshift({name: "All Departments", value: 0});
+        inquirer.prompt([
+            {
+                type: "list",
+                message: "Which department's employees do you want to view?",
+                name: "departmentId",
+                choices: departmentList
+            }
+        ])
+        .then((answers) => {
+            if (answers.departmentId === 0) {
+                console.log(chalk.green(`Employees of all departments:\n`));
+                sql = `
+                    SELECT
+                        department.name AS department, 
+                        employee.id, 
+                        employee.first_name, 
+                        employee.last_name, 
+                        role.title, 
+                        role.salary,
+                        CONCAT(manager.first_name, ' ', manager.last_name) AS manager
+                    FROM 
+                        employee 
+                    LEFT JOIN 
+                        role ON employee.role_id = role.id
+                    LEFT JOIN
+                        employee AS manager ON employee.manager_id = manager.id
+                    JOIN 
+                        department ON role.department_id = department.id
+                    ORDER BY 
+                        department`;
+            } else {
+                sql = `
+                    SELECT
+                        department.name AS department
+                    FROM
+                        department
+                    WHERE
+                        id = ${answers.departmentId}`;
+                console.log(chalk.green(`\nEmployees of ${results[0].name}:`));
+            }
+            db.query(sql, function (error, results) {
+                if (error) throw error;
+                console.log(" ");
+                console.table(results);
+                chooseAnOption();
+            });
+        })
+        .catch(error => console.error(error));
+    });
 }
+
 
 function viewTotalUtilizedBudget() {
     // query to get the list of departments
