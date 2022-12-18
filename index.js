@@ -89,11 +89,9 @@ function chooseAnOption() {
                 viewEmployeeByDepartment();
                 break;
             case "View the Total Utilized Budget of a Department" :
-                console.log("case: View the Total Utilized Budget of a Department");
                 viewTotalUtilizedBudget();
                 break;              
             case "Quit" :
-                console.log("Quit");
                 process.exit(0); //end the application
             default:
                 chooseAnOption();
@@ -126,7 +124,8 @@ function addDepartment() {
         {
             type: "input",
             message: "What is the name of the department?",
-            name: "departmentName"
+            name: "departmentName",
+            validate: validateRequiredInput
         }
     ])
     .then((answers) => {
@@ -179,7 +178,8 @@ function viewAllRoles() {
     const sql = `SELECT role.id, role.title AS role, department.name AS department, role.salary
                 FROM role
                 LEFT JOIN department
-                ON role.department_id = department.id`;
+                ON role.department_id = department.id
+                ORDER BY role.id`;
 
     db.query(sql, function (error, results) {
         if (error) throw error;
@@ -191,22 +191,23 @@ function viewAllRoles() {
 
 function addRole() {
     // query to get the list of departments
-    const sql = "SELECT * FROM department";
+    const sql = "SELECT * FROM department ORDER BY name";
     db.query(sql, function (error, results) {
         if (error) throw error;
         const departmentList = results.map((department) => {return {name: department.name, value: department.id}});
-        console.log("departmentList: ", departmentList);
         // ask user to enter the role information
         inquirer.prompt([
             {
                 type: "input",
                 message: "What is the title of the role?",
-                name: "roleTitle"
+                name: "roleTitle",
+                validate: validateRequiredInput
             },
             {
                 type: "input",
                 message: "What is the salary of the role?",
-                name: "roleSalary"
+                name: "roleSalary",
+                validate: validateRequiredNumber
             },
             {
                 type: "list",
@@ -216,13 +217,12 @@ function addRole() {
             }
         ])
         .then((answers) => {
-            console.log("answers: ", answers);
             // insert the role information into the database
             const sql = `
-            INSERT INTO 
-                role (title, salary, department_id) 
-            VALUES 
-                ("${answers.roleTitle}", ${answers.roleSalary}, ${answers.roleDepartment})`;
+                INSERT INTO 
+                    role (title, salary, department_id) 
+                VALUES 
+                    ("${answers.roleTitle}", ${answers.roleSalary}, ${answers.roleDepartment})`;
             db.query(sql, function (error, results) {
                 if (error) throw error;
                 console.log(chalk.green(`${answers.roleTitle} Role added successfully!\n`));
@@ -235,7 +235,7 @@ function addRole() {
 
 function deleteRole() {
     // query to get the list of roles
-    let sql = "SELECT * FROM role";
+    let sql = "SELECT * FROM role ORDER BY department_id, title";
     db.query(sql, function (error, results) {
         if (error) throw error;
         const roleList = results.map((role) => {return {name: role.title, value: role.id}});
@@ -266,7 +266,7 @@ function viewAllEmployees() {
                     employee.id, 
                     employee.first_name, 
                     employee.last_name, 
-                    role.title, 
+                    role.title AS role, 
                     department.name AS department, 
                     role.salary, 
                     CONCAT(manager.first_name, " ", manager.last_name) AS manager
@@ -277,7 +277,9 @@ function viewAllEmployees() {
                 LEFT JOIN 
                     department ON role.department_id = department.id
                 LEFT JOIN 
-                    employee AS manager ON employee.manager_id = manager.id`;
+                    employee AS manager ON employee.manager_id = manager.id
+                ORDER BY
+                    employee.id`;
     db.query(sql, function (error, results) {
         if (error) throw error;
         console.log(" ");
@@ -290,37 +292,41 @@ function viewAllEmployees() {
 
 function addEmployee() {
     // query to get the list of roles
-    let sql = "SELECT * FROM role";
+    let sql = "SELECT * FROM role ORDER BY department_id, title";
     db.query(sql, function (error, results) {
         if (error) throw error;
         const roleList = results.map((role) => {return {name: role.title, value: role.id}});
         // query to get the list of managers
-        sql = "SELECT * FROM employee";
+        sql = "SELECT * FROM employee ORDER BY first_name, last_name";
         db.query(sql, function (error, results) {
             if (error) throw error;
             const managerList = results.map((manager) => {return {name: manager.first_name + " " + manager.last_name, value: manager.id}});
+            managerList.unshift({name: "None", value: null});
             // prompt the user to enter the employee information
             inquirer.prompt([
                 {
                     type: "input",
                     message: "What is the first name of the employee?",
-                    name: "employeeFirstName"
+                    name: "employeeFirstName",
+                    validate: validateRequiredInput
+                    
                 },
                 {
                     type: "input",
                     message: "What is the last name of the employee?",
-                    name: "employeeLastName"
+                    name: "employeeLastName",
+                    validate: validateRequiredInput
                 },
                 {
                     type: "list",
                     message: "What is the role of the employee?",
-                    name: "employeeRole",
+                    name: "employeeRoleId",
                     choices: roleList
                 },
                 {
                     type: "list",
                     message: "Who is the manager of the employee?",
-                    name: "employeeManager",
+                    name: "employeeManagerId",
                     choices: managerList
                 }
             ])
@@ -332,8 +338,8 @@ function addEmployee() {
                     VALUES (
                         "${answers.employeeFirstName}", 
                         "${answers.employeeLastName}", 
-                        "${answers.employeeRole}",
-                        "${answers.employeeManager}"
+                        ${answers.employeeRoleId},
+                        ${answers.employeeManagerId}
                     )`;
                 db.query(sql, function (error, results) {
                     if (error) throw error;
@@ -680,4 +686,27 @@ function viewTotalUtilizedBudget() {
         })
         .catch(error => console.error(error));
     });
+}
+
+function validateRequiredInput(name) {
+    // reject for empty string
+    if (name.trim().length <= 0) {
+        console.log(chalk.red("\nCannot be blank!"))
+        return false;
+    }
+    return true;
+}
+
+function validateRequiredNumber(id) {
+    // reject for empty string
+    if (id.trim().length <= 0) {
+        console.log(chalk.red("\nCannot be blank!"))
+        return false;
+    }
+    // reject for non-number
+    if (isNaN(id.trim())) {
+        console.log(chalk.red("\nMust be a number!"))
+        return false
+    }
+    return true;
 }
