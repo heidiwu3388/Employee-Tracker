@@ -3,10 +3,11 @@ VALUES ("Sales"),
        ("Marketing"),
        ("Accounting"),
        ("Human Resources"),
+       ("Executive"),
        ("Legal");
 
 INSERT INTO role (title, salary, department_id)
-VALUES ("CEO", 200000, NULL),
+VALUES ("CEO", 200000, 5),
        ("Sales Manager", 120000, 1),
        ("Sales", 80000, 1),
        ("Marketing Manager", 120000, 2),
@@ -31,7 +32,4 @@ VALUES ("Andy", "Jassy", 1, NULL),
        ("Ali", "Benson", 7, 10),
        ("Darrell", "Dean", 7, 10),
        ("Stephanie", "Walker", 7, 10),
-       ("Halle", "Howard", 8, 1),
-       ("Marcelo", "Hines", 9, 15),
-       ("Johnny", "Horn", 9, 15),
-       ("Alberto", "Suarez", 9, 15);
+       ("Halle", "Howard", 8, 1)
