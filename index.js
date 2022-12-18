@@ -82,6 +82,12 @@ function chooseAnOption() {
             case "Delete Empolyee" :
                 deleteEmployee();
                 break;
+            case "View Employee by Manager" :
+                viewEmployeeByManager();
+                break;
+            case "View Employee by Department" :
+                viewEmployeeByDepartment();
+                break;
             case "View the Total Utilized Budget of a Department" :
                 console.log("case: View the Total Utilized Budget of a Department");
                 viewTotalUtilizedBudget();
@@ -243,17 +249,22 @@ function deleteRole() {
 }
 function viewAllEmployees() {
     // query to get the list of employees
-    const sql = `SELECT employee.id, employee.first_name, employee.last_name, role.title, 
-    department.name AS department, role.salary, CONCAT(manager.first_name, " ", manager.last_name) AS manager
-    FROM 
-        employee
-    LEFT JOIN 
-        role ON employee.role_id = role.id
-    LEFT JOIN 
-        department ON role.department_id = department.id
-    LEFT JOIN 
-        employee AS manager ON employee.manager_id = manager.id`;
-    
+    const sql = `SELECT 
+                    employee.id, 
+                    employee.first_name, 
+                    employee.last_name, 
+                    role.title, 
+                    department.name AS department, 
+                    role.salary, 
+                    CONCAT(manager.first_name, " ", manager.last_name) AS manager
+                FROM 
+                    employee
+                LEFT JOIN 
+                    role ON employee.role_id = role.id
+                LEFT JOIN 
+                    department ON role.department_id = department.id
+                LEFT JOIN 
+                    employee AS manager ON employee.manager_id = manager.id`;
     db.query(sql, function (error, results) {
         if (error) throw error;
         console.log(" ");
@@ -444,6 +455,100 @@ function deleteEmployee() {
         )})
         .catch(error => console.error(error));
     });
+}
+
+function viewEmployeeByManager() {
+    // query to get the list of managers
+    let sql = `
+        SELECT DISTINCT
+            manager.first_name, 
+            manager.last_name,
+            manager.id
+        FROM 
+            employee 
+        INNER JOIN
+            employee AS manager ON employee.manager_id = manager.id
+        ORDER BY manager.first_name, manager.last_name`; 
+    db.query(sql, function (error, results) {
+        if (error) throw error;
+        const managerList = results.map((manager) => {return {name: manager.first_name + " " + manager.last_name, value: manager.id}});
+        managerList.unshift({name: "All Managers", value: 0});
+        // prompt the user to enter the employee information
+        inquirer.prompt([
+            {
+                type: "list",
+                message: "Which manager‘s employees do you want to view?",
+                name: "managerId",
+                choices: managerList
+            }
+        ])
+        .then((answers) => {
+            if (answers.managerId === 0) { // if the user wants to view employees of all managers
+                console.log(chalk.green(`Employees of all managers:\n`));
+                sql = `
+                    SELECT
+                        CONCAT(manager.first_name, ' ', manager.last_name) AS manager,
+                        employee.id, 
+                        employee.first_name, 
+                        employee.last_name, 
+                        role.title, 
+                        department.name AS department, 
+                        role.salary
+                    FROM 
+                        employee 
+                    JOIN 
+                        employee AS manager ON employee.manager_id = manager.id
+                    LEFT JOIN 
+                        role ON employee.role_id = role.id
+                    LEFT JOIN 
+                        department ON role.department_id = department.id
+                    ORDER BY 
+                        manager`;
+            } else { // if the user wants to view employees of a specific manager
+                // query to get the manager's full name
+                sql = `
+                    SELECT 
+                        CONCAT(first_name, ' ', last_name) AS manager 
+                    FROM 
+                        employee 
+                    WHERE 
+                        id = ${answers.managerId}`;
+                db.query(sql, function (error, results) {
+                    if (error) throw error;
+                    console.log(chalk.green(`\nEmployees of ${results[0].manager}:`));
+                });                        
+                sql = `
+                    SELECT
+                        employee.id, 
+                        employee.first_name, 
+                        employee.last_name, 
+                        role.title, 
+                        department.name AS department, 
+                        role.salary
+                    FROM 
+                        employee
+                    LEFT JOIN 
+                        role ON employee.role_id = role.id
+                    LEFT JOIN 
+                        department ON role.department_id = department.id
+                    LEFT JOIN 
+                        employee AS manager ON employee.manager_id = manager.id
+                    WHERE 
+                        employee.manager_id = ${answers.managerId}`;
+            }
+            db.query(sql, function (error, results) {
+                if (error) throw error;
+                console.log(" ");
+                console.table(results);
+                chooseAnOption();
+            });
+        })
+        .catch(error => console.error(error));
+    });
+}
+
+function viewEmployeeByDepartment() {
+
 }
 
 function viewTotalUtilizedBudget() {
