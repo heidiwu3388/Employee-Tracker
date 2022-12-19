@@ -10,7 +10,6 @@ This is a command-line application that allows non-developers to easily view and
 * [Installation](#installation)
 * [Usage](#usage)
 * [Screenshot](#screenshot)
-* [Credits](#credits)
 * [License](#license) 
 
 ## Installation
@@ -51,7 +50,7 @@ node index.js
     - View Employee by Department
     - View the Total Utilized Budget of a Department
     - Quit
-- When users choose one of the options, the corresponding data will be retrieved and be displyed in a formatted table.
+- When users choose one of the options, the corresponding data will be retrieved and be displayed in a formatted table.
 
 
 ## Screenshot
@@ -87,11 +86,6 @@ node index.js
 ![View Employee by Department](./assets/images/014_View_Employee_By_Department.png)
 - View the Total Utilized Budget of a Department:
 ![View the Total Utilized Budget of a Department](./assets/images/015_View_Budget_Of_Department.png)
-
-
-## Credits
-
-N/A
 
 ## License
 
